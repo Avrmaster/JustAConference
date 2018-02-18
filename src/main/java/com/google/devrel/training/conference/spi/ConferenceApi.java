@@ -5,6 +5,7 @@ import static com.google.devrel.training.conference.service.OfyService.ofy;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiMethod.HttpMethod;
+import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.response.UnauthorizedException;
 import com.google.appengine.api.users.User;
 import com.google.devrel.training.conference.Constants;
@@ -34,44 +35,38 @@ public class ConferenceApi {
      *
      * @param user
      *            A User object injected by the cloud endpoints.
-     * @param profileForm
+     *            and
      *            A ProfileForm object sent from the client form.
+     *            because apparently only one Entity argument is allowed
      * @return Profile object just created.
      * @throws UnauthorizedException
      *             when the User object is null.
      */
-
     // Declare this method as a method available externally through Endpoints
     @ApiMethod(name = "saveProfile", path = "profile", httpMethod = HttpMethod.POST)
     // The request that invokes this method should provide data that
     // conforms to the fields defined in ProfileForm
+    public Profile saveProfile(Profile user) throws UnauthorizedException {
 
-    // TODO 1 Pass the ProfileForm parameter
-    // TODO 2 Pass the User parameter
-    public Profile saveProfile() throws UnauthorizedException {
-
-        String userId = null;
-        String mainEmail = null;
-        String displayName = "Your name will go here";
+        String userId;
+        String mainEmail;
+        String displayName = null;
         TeeShirtSize teeShirtSize = TeeShirtSize.NOT_SPECIFIED;
 
-        // TODO 2
-        // If the user is not logged in, throw an UnauthorizedException
+        if (user == null)
+            throw new UnauthorizedException("User haven't logged in");
 
-        // TODO 1
-        // Set the teeShirtSize to the value sent by the ProfileForm, if sent
-        // otherwise leave it as the default value
+        if (user.getTeeShirtSize() != null)
+            teeShirtSize = user.getTeeShirtSize();
 
-        // TODO 1
-        // Set the displayName to the value sent by the ProfileForm, if sent
-        // otherwise set it to null
+        if (user.getDisplayName() != null)
+            displayName = user.getDisplayName();
 
-        // TODO 2
-        // Get the userId and mainEmail
+        userId = user.getUserId();
+        mainEmail = user.getMainEmail();
 
-        // TODO 2
-        // If the displayName is null, set it to default value based on the user's email
-        // by calling extractDefaultDisplayNameFromEmail(...)
+        if (displayName == null)
+            displayName = extractDefaultDisplayNameFromEmail(mainEmail);
 
         // Create a new Profile entity from the
         // userId, displayName, mainEmail and teeShirtSize
@@ -79,6 +74,7 @@ public class ConferenceApi {
 
         // TODO 3 (In Lesson 3)
         // Save the Profile entity in the datastore
+        //ok, bro
 
         // Return the profile
         return profile;
