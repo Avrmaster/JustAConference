@@ -1,17 +1,16 @@
 package com.google.devrel.training.conference.spi;
 
-import static com.google.devrel.training.conference.service.OfyService.ofy;
-
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiMethod.HttpMethod;
-import com.google.api.server.spi.config.Named;
 import com.google.api.server.spi.response.UnauthorizedException;
 import com.google.appengine.api.users.User;
 import com.google.devrel.training.conference.Constants;
 import com.google.devrel.training.conference.domain.Profile;
 import com.google.devrel.training.conference.form.ProfileForm;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
+import com.googlecode.objectify.ObjectifyService;
+import com.googlecode.objectify.Objectify;
 import com.googlecode.objectify.Key;
 
 /**
@@ -20,6 +19,10 @@ import com.googlecode.objectify.Key;
 @Api(name = "conference", version = "v1", scopes = { Constants.EMAIL_SCOPE }, clientIds = {
         Constants.WEB_CLIENT_ID, Constants.API_EXPLORER_CLIENT_ID }, description = "API for the Conference Central Backend application.")
 public class ConferenceApi {
+
+    private static Objectify ofy() {
+        return ObjectifyService.ofy();
+    }
 
     /*
      * Get the display name from the user's email. For example, if the email is
@@ -35,7 +38,7 @@ public class ConferenceApi {
      *
      * @param user
      *            A User object injected by the cloud endpoints.
-     *            and
+     * @param profileForm
      *            A ProfileForm object sent from the client form.
      *            because apparently only one Entity argument is allowed
      * @return Profile object just created.
@@ -46,8 +49,7 @@ public class ConferenceApi {
     @ApiMethod(name = "saveProfile", path = "profile", httpMethod = HttpMethod.POST)
     // The request that invokes this method should provide data that
     // conforms to the fields defined in ProfileForm
-    public Profile saveProfile(Profile user) throws UnauthorizedException {
-
+    public Profile saveProfile(User user, ProfileForm profileForm) throws UnauthorizedException {
         String userId;
         String mainEmail;
         String displayName = null;
@@ -56,25 +58,28 @@ public class ConferenceApi {
         if (user == null)
             throw new UnauthorizedException("User haven't logged in");
 
-        if (user.getTeeShirtSize() != null)
-            teeShirtSize = user.getTeeShirtSize();
+        if (profileForm.getTeeShirtSize() != null)
+            teeShirtSize = profileForm.getTeeShirtSize();
 
-        if (user.getDisplayName() != null)
-            displayName = user.getDisplayName();
+        if (profileForm.getDisplayName() != null)
+            displayName = profileForm.getDisplayName();
 
         userId = user.getUserId();
-        mainEmail = user.getMainEmail();
+        mainEmail = user.getEmail();
 
         if (displayName == null)
             displayName = extractDefaultDisplayNameFromEmail(mainEmail);
 
         // Create a new Profile entity from the
         // userId, displayName, mainEmail and teeShirtSize
-        Profile profile = new Profile(userId, displayName, mainEmail, teeShirtSize);
+        Profile profile = getProfile(user);
+        if (profile == null)
+            profile = new Profile(userId, displayName, mainEmail, teeShirtSize);
+        else
+            profile.update(displayName, teeShirtSize);
 
-        // TODO 3 (In Lesson 3)
         // Save the Profile entity in the datastore
-        //ok, bro
+        ofy().save().entity(profile).now();
 
         // Return the profile
         return profile;
@@ -96,11 +101,8 @@ public class ConferenceApi {
             throw new UnauthorizedException("Authorization required");
         }
 
-        // TODO
         // load the Profile Entity
-        String userId = ""; // TODO
-        Key key = null; // TODO
-        Profile profile = null; // TODO load the Profile entity
-        return profile;
+        return ofy().load().key(Key.create(Profile.class, user.getUserId())).now();
     }
+
 }
