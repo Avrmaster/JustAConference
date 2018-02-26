@@ -14,8 +14,13 @@ public class Profile {
 
 	@Id
 	String userId;
-    
-    /**
+
+	/**
+	 * Just making the default constructor private.
+	 */
+	private Profile() {}
+
+	/**
      * Public constructor for Profile.
      * @param userId The user id, obtained from the email
      * @param displayName Any string user wants us to display him/her on this system.
@@ -45,11 +50,6 @@ public class Profile {
 	public String getUserId() {
 		return userId;
 	}
-
-	/**
-     * Just making the default constructor private.
-     */
-    private Profile() {}
 
 	public void update(String newDisplayName, TeeShirtSize newTeeShirtSize) {
     	this.displayName = newDisplayName;

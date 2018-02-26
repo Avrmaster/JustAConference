@@ -1,16 +1,16 @@
 package com.google.devrel.training.conference.spi;
 
-import com.google.api.server.spi.config.Api;
-import com.google.api.server.spi.config.ApiMethod;
-import com.google.api.server.spi.config.ApiMethod.HttpMethod;
 import com.google.api.server.spi.response.UnauthorizedException;
+import com.google.api.server.spi.config.ApiMethod.HttpMethod;
+import com.google.api.server.spi.config.ApiMethod;
+import com.google.api.server.spi.config.Api;
 import com.google.appengine.api.users.User;
-import com.google.devrel.training.conference.Constants;
-import com.google.devrel.training.conference.domain.Profile;
-import com.google.devrel.training.conference.form.ProfileForm;
+
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
-import com.googlecode.objectify.ObjectifyService;
-import com.googlecode.objectify.Objectify;
+import com.google.devrel.training.conference.service.OfyService;
+import com.google.devrel.training.conference.form.ProfileForm;
+import com.google.devrel.training.conference.domain.Profile;
+import com.google.devrel.training.conference.Constants;
 import com.googlecode.objectify.Key;
 
 /**
@@ -19,10 +19,6 @@ import com.googlecode.objectify.Key;
 @Api(name = "conference", version = "v1", scopes = { Constants.EMAIL_SCOPE }, clientIds = {
         Constants.WEB_CLIENT_ID, Constants.API_EXPLORER_CLIENT_ID }, description = "API for the Conference Central Backend application.")
 public class ConferenceApi {
-
-    private static Objectify ofy() {
-        return ObjectifyService.ofy();
-    }
 
     /*
      * Get the display name from the user's email. For example, if the email is
@@ -50,13 +46,13 @@ public class ConferenceApi {
     // The request that invokes this method should provide data that
     // conforms to the fields defined in ProfileForm
     public Profile saveProfile(User user, ProfileForm profileForm) throws UnauthorizedException {
+        if (user == null)
+            throw new UnauthorizedException("User haven't logged in");
+
         String userId;
         String mainEmail;
         String displayName = null;
         TeeShirtSize teeShirtSize = TeeShirtSize.NOT_SPECIFIED;
-
-        if (user == null)
-            throw new UnauthorizedException("User haven't logged in");
 
         if (profileForm.getTeeShirtSize() != null)
             teeShirtSize = profileForm.getTeeShirtSize();
@@ -79,7 +75,7 @@ public class ConferenceApi {
             profile.update(displayName, teeShirtSize);
 
         // Save the Profile entity in the datastore
-        ofy().save().entity(profile).now();
+        OfyService.ofy().save().entity(profile).now();
 
         // Return the profile
         return profile;
@@ -102,7 +98,7 @@ public class ConferenceApi {
         }
 
         // load the Profile Entity
-        return ofy().load().key(Key.create(Profile.class, user.getUserId())).now();
+        return OfyService.ofy().load().key(Key.create(Profile.class, user.getUserId())).now();
     }
 
 }
