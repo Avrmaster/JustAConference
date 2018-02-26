@@ -59,20 +59,20 @@ public class ConferenceApi {
 
         if (profileForm.getDisplayName() != null)
             displayName = profileForm.getDisplayName();
-
         userId = user.getUserId();
         mainEmail = user.getEmail();
-
-        if (displayName == null)
-            displayName = extractDefaultDisplayNameFromEmail(mainEmail);
 
         // Create a new Profile entity from the
         // userId, displayName, mainEmail and teeShirtSize
         Profile profile = getProfile(user);
-        if (profile == null)
+        if (profile == null) {
+            if (displayName == null)
+                displayName = extractDefaultDisplayNameFromEmail(mainEmail);
             profile = new Profile(userId, displayName, mainEmail, teeShirtSize);
-        else
-            profile.update(displayName, teeShirtSize);
+        } else {
+            if (displayName != null)
+                profile.update(displayName, teeShirtSize);
+        }
 
         // Save the Profile entity in the datastore
         OfyService.ofy().save().entity(profile).now();
