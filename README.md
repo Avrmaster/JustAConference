@@ -1,4 +1,5 @@
 App Engine application for the Udacity training course.
+The app is accesiable [HERE][0]
 
 ## Products
 - [App Engine][1]
@@ -25,7 +26,7 @@ App Engine application for the Udacity training course.
 1. Get the client library with `mvn appengine:endpoints_get_client_lib`
 1. Deploy your application.
 
-
+[0]: definitelylastmavenproject.appspot.com
 [1]: https://developers.google.com/appengine
 [2]: http://java.com/en/
 [3]: https://developers.google.com/appengine/docs/java/endpoints/
