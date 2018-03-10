@@ -202,7 +202,6 @@ public class ConferenceApi {
             httpMethod = HttpMethod.POST
     )
     public List<Conference> getConferencesFiltered() {
-
         Query query = ofy().load().type(Conference.class);
         query = query.filter("city =", "London");
         query = query.filter("topics =", "Web Technologies");
@@ -223,8 +222,7 @@ public class ConferenceApi {
         String userId = user.getUserId();
         Key<Profile> userKey = Key.create(Profile.class, userId);
         return ofy().load().type(Conference.class)
-                .ancestor(userKey)
-                .order("name").list();
+                .ancestor(userKey).list();
     }
 
     /**
