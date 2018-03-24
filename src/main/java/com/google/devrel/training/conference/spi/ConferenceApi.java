@@ -8,8 +8,12 @@ import com.google.api.server.spi.response.UnauthorizedException;
 import com.google.api.server.spi.config.ApiMethod.HttpMethod;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.Api;
+import com.google.appengine.api.taskqueue.Queue;
+import com.google.appengine.api.taskqueue.QueueFactory;
+import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.users.User;
 
+import com.google.devrel.training.conference.domain.Announcement;
 import com.google.devrel.training.conference.domain.Conference;
 import com.google.devrel.training.conference.form.ConferenceForm;
 import com.google.devrel.training.conference.form.ConferenceQueryForm;
@@ -19,7 +23,11 @@ import com.google.devrel.training.conference.domain.Profile;
 import com.google.devrel.training.conference.Constants;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Work;
+
 import com.googlecode.objectify.cmd.Query;
+
+import com.google.appengine.api.memcache.MemcacheService;
+import com.google.appengine.api.memcache.MemcacheServiceFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -116,7 +124,7 @@ public class ConferenceApi {
      * Gets the Profile entity for the current user
      * or creates it if it doesn't exist
      *
-     * @param user
+     * @param user - user :)
      * @return user's Profile
      */
     private static Profile getProfileFromUser(User user) {
@@ -172,6 +180,10 @@ public class ConferenceApi {
 
         // Save Conference and Profile Entities
         ofy().save().entities(conference, profile).now();
+        Queue queue = QueueFactory.getDefaultQueue();
+        queue.add(TaskOptions.Builder.withUrl("/tasks/send_confirmation_email")
+                .param("email", profile.getMainEmail())
+                .param("conferenceInfo", conference.toString()));
 
         return conference;
     }
@@ -427,7 +439,7 @@ public class ConferenceApi {
 
                 // 404 when there is no Conference with the given conferenceId.
                 if (conference == null) {
-                    return new  WrappedBoolean(false,
+                    return new WrappedBoolean(false,
                             "No Conference found with key: " + websafeConferenceKey);
                 }
 
@@ -449,9 +461,8 @@ public class ConferenceApi {
         // if result is false
         if (!result.getResult()) {
             if (result.getReason().contains("No Conference found with key")) {
-                throw new NotFoundException (result.getReason());
-            }
-            else {
+                throw new NotFoundException(result.getReason());
+            } else {
                 throw new ForbiddenException(result.getReason());
             }
         }
@@ -495,6 +506,21 @@ public class ConferenceApi {
             conferences.add(getConference(keyStringToAttend));
         }
         return conferences;
+    }
+
+
+    @ApiMethod(
+            name = "getAnnouncement",
+            path = "announcement",
+            httpMethod = HttpMethod.GET
+    )
+    public Announcement getAnnouncement() {
+        MemcacheService memcacheService = MemcacheServiceFactory.getMemcacheService();
+        Object message = memcacheService.get(Constants.MEMCACHE_ANNOUNCEMENTS_KEY);
+        if (message != null) {
+            return new Announcement(message.toString());
+        }
+        return null;
     }
 
 }

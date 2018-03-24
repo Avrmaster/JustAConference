@@ -1,8 +1,8 @@
 package com.google.devrel.training.conference.domain;
 
 import com.google.common.collect.ImmutableList;
-import com.google.devrel.training.conference.form.ProfileForm;
 import com.google.devrel.training.conference.form.ProfileForm.TeeShirtSize;
+import com.googlecode.objectify.annotation.Cache;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 
@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-@Entity
+@Entity @Cache
 public class Profile {
 	String displayName;
 	String mainEmail;
